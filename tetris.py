@@ -121,26 +121,48 @@ T = [['.....',
 
 SHAPES = [S, Z, I, O, J, L, T]
 
-# Color themes for pieces
-SHAPE_COLORS = {
-    'classic': [(0, 255, 0), (255, 0, 0), (0, 255, 255),
-                (255, 255, 0), (255, 165, 0), (0, 0, 255),
-                (128, 0, 128)],
-    'neon': [(57, 255, 20), (255, 20, 147), (0, 255, 255),
-             (255, 255, 0), (255, 127, 80), (0, 191, 255),
-             (186, 85, 211)],
-    'pastel': [(119, 221, 119), (255, 179, 186), (186, 225, 255),
-               (255, 255, 204), (253, 253, 150), (202, 231, 255),
-               (221, 160, 221)]
+# Base colors for the original theme
+SHAPE_COLORS = [
+    (0, 255, 0),
+    (255, 0, 0),
+    (0, 255, 255),
+    (255, 255, 0),
+    (255, 165, 0),
+    (0, 0, 255),
+    (128, 0, 128),
+]
+
+# Additional color themes mapped by name
+THEME_COLORS = {
+    'classic': SHAPE_COLORS,
+    'neon': [
+        (57, 255, 20),
+        (255, 20, 147),
+        (0, 255, 255),
+        (255, 255, 0),
+        (255, 127, 80),
+        (0, 191, 255),
+        (186, 85, 211),
+    ],
+    'pastel': [
+        (119, 221, 119),
+        (255, 179, 186),
+        (186, 225, 255),
+        (255, 255, 204),
+        (253, 253, 150),
+        (202, 231, 255),
+        (221, 160, 221),
+    ],
 }
 
-theme_names = list(SHAPE_COLORS.keys())
+theme_names = list(THEME_COLORS.keys())
 current_theme_index = 0
 current_theme = theme_names[current_theme_index]
 
 
 def get_color(index: int) -> Tuple[int, int, int]:
-    return SHAPE_COLORS[current_theme][index]
+    return THEME_COLORS[current_theme][index]
+
 
 class Piece:
     def __init__(self, x: int, y: int, shape: List[List[str]]):
@@ -158,7 +180,8 @@ class Piece:
 def create_grid(locked_positions: dict) -> List[List[Tuple[int, int, int]]]:
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
     for (j, i), color_idx in locked_positions.items():
-        grid[i][j] = get_color(color_idx)
+        if 0 <= i < 20 and 0 <= j < 10:
+            grid[i][j] = get_color(color_idx)
     return grid
 
 
@@ -186,6 +209,57 @@ def get_shape() -> Piece:
     return Piece(5, 0, random.choice(SHAPES))
 
 
+# ---- Minimal inline game logic to replace missing imports ----
+
+def move_piece(piece: Piece, dx: int, dy: int, grid) -> bool:
+    old_x, old_y = piece.x, piece.y
+    piece.x += dx
+    piece.y += dy
+    if not valid_space(piece, grid):
+        piece.x, piece.y = old_x, old_y
+        return False
+    return True
+
+
+def rotate_piece(piece: Piece, grid) -> None:
+    old_rot = piece.rotation
+    piece.rotation = (piece.rotation + 1) % len(piece.shape)
+    if not valid_space(piece, grid):
+        piece.rotation = old_rot
+
+
+def clear_rows(locked: dict) -> int:
+    """Remove full rows from locked positions; return number of cleared rows."""
+    rows_to_clear = []
+    for i in range(20):
+        if all((j, i) in locked for j in range(10)):
+            rows_to_clear.append(i)
+    if not rows_to_clear:
+        return 0
+
+    # Remove cleared rows
+    for i in rows_to_clear:
+        for j in range(10):
+            locked.pop((j, i), None)
+
+    # Shift everything above down
+    rows_to_clear = sorted(rows_to_clear)
+    for (x, y) in sorted(list(locked.keys()), key=lambda p: p[1], reverse=True):
+        shift = sum(1 for r in rows_to_clear if y < r)
+        if shift:
+            locked[(x, y + shift)] = locked.pop((x, y))
+    return len(rows_to_clear)
+
+
+def lock_piece(piece: Piece, locked_positions: dict) -> int:
+    for (x, y) in convert_shape_format(piece):
+        locked_positions[(x, y)] = piece.color_index
+    cleared = clear_rows(locked_positions)
+    # simple scoring: 100 points per cleared row
+    return cleared * 100
+# --------------------------------------------------------------
+
+
 def draw_text_middle(surface, text, size, color):
     font = pygame.font.SysFont('comicsans', size, bold=True)
     label = font.render(text, True, color)
@@ -200,22 +274,6 @@ def draw_grid(surface, grid):
         for j in range(len(grid[i])):
             pygame.draw.line(surface, (128, 128, 128), (TOP_LEFT_X + j * BLOCK_SIZE, TOP_LEFT_Y),
                              (TOP_LEFT_X + j * BLOCK_SIZE, TOP_LEFT_Y + PLAY_HEIGHT))
-
-
-def clear_rows(grid, locked):
-    rows_to_clear = [i for i in range(len(grid) - 1, -1, -1) if (0, 0, 0) not in grid[i]]
-    for row in rows_to_clear:
-        del_row = row
-        for j in range(len(grid[row])):
-            try:
-                del locked[(j, row)]
-            except KeyError:
-                pass
-        for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
-            x, y = key
-            if y < del_row:
-                locked[(x, y + 1)] = locked.pop(key)
-    return len(rows_to_clear)
 
 
 def draw_next_shape(shape, surface):
@@ -278,21 +336,23 @@ def main():
     score = 0
     screen = pygame.display.set_mode((S_WIDTH, S_HEIGHT))
     pygame.display.set_caption('Tetris')
+
     while run:
         grid = create_grid(locked_positions)
         fall_time += clock.get_rawtime()
         level_time += clock.get_rawtime()
         clock.tick()
+
         if level_time / 1000 > 5:
             level_time = 0
             if fall_speed > 0.12:
                 fall_speed -= 0.005
+
         if fall_time / 1000 > fall_speed:
             fall_time = 0
-            current_piece.y += 1
-            if not valid_space(current_piece, grid) and current_piece.y > 0:
-                current_piece.y -= 1
+            if not move_piece(current_piece, 0, 1, grid):
                 change_piece = True
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -300,39 +360,32 @@ def main():
                 return
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    current_piece.x -= 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.x += 1
+                    move_piece(current_piece, -1, 0, grid)
                 elif event.key == pygame.K_RIGHT:
-                    current_piece.x += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.x -= 1
+                    move_piece(current_piece, 1, 0, grid)
                 elif event.key == pygame.K_DOWN:
-                    current_piece.y += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.y -= 1
+                    move_piece(current_piece, 0, 1, grid)
                 elif event.key == pygame.K_UP:
-                    current_piece.rotation += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation -= 1
+                    rotate_piece(current_piece, grid)
                 elif event.key == pygame.K_t:
                     current_theme_index = (current_theme_index + 1) % len(theme_names)
                     current_theme = theme_names[current_theme_index]
+
         shape_pos = convert_shape_format(current_piece)
         for j, i in shape_pos:
             if i > -1:
                 grid[i][j] = current_piece.color
+
         if change_piece:
-            for pos in shape_pos:
-                p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.color_index
+            score += lock_piece(current_piece, locked_positions)
             current_piece = next_piece
             next_piece = get_shape()
             change_piece = False
-            score += clear_rows(grid, locked_positions) * 10
+
         draw_window(screen, grid, score)
         draw_next_shape(next_piece, screen)
         pygame.display.update()
+
         if check_lost(locked_positions):
             draw_text_middle(screen, 'You Lost', 80, (255, 255, 255))
             pygame.display.update()
