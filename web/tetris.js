@@ -17,21 +17,20 @@ function resizeCanvas() {
   const maxW = window.innerWidth;
   const maxH = window.innerHeight - controlsHeight;
 
-  // determine block size that fits within viewport
-  const maxPlayableWidth = Math.min(maxW, Math.floor(maxH / 2));
-  BLOCK_SIZE = Math.floor(maxPlayableWidth / COLS / 2);
+  // determine logical block size at half scale
+  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS) / 2);
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
-  // match canvas display size
-  canvas.style.width = PLAY_WIDTH + 'px';
-  canvas.style.height = PLAY_HEIGHT + 'px';
+  // match canvas display size at double logical size
+  canvas.style.width = (PLAY_WIDTH * 2) + 'px';
+  canvas.style.height = (PLAY_HEIGHT * 2) + 'px';
 
-  // set actual canvas resolution based on device pixel ratio
-  const scale = window.devicePixelRatio || 1;
+  // set actual canvas resolution accounting for device pixel ratio
+  const scale = (window.devicePixelRatio || 1) * 2;
   canvas.width = PLAY_WIDTH * scale;
   canvas.height = PLAY_HEIGHT * scale;
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.setTransform((window.devicePixelRatio || 1) * 2, 0, 0, (window.devicePixelRatio || 1) * 2, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas, { passive: true });
 window.addEventListener('orientationchange', resizeCanvas, { passive: true });
