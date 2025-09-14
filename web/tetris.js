@@ -4,8 +4,6 @@ const ROWS = 20;
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
-const levelEl = document.getElementById('level');
 
 let BLOCK_SIZE = 30;                 // will be updated on resize
 let PLAY_WIDTH = COLS * BLOCK_SIZE;
@@ -178,13 +176,6 @@ let score = 0;
 let level = 1;
 let linesCleared = 0;
 
-function updateHUD() {
-  scoreEl.textContent = 'Score: ' + score;
-  levelEl.textContent = 'Level: ' + level;
-}
-
-updateHUD();
-
 function lockPiece() {
   const positions = convertShapeFormat(currentPiece);
   positions.forEach(pos => {
@@ -208,7 +199,6 @@ function lockPiece() {
     linesCleared = 0;
     dropInterval = 500;
   }
-  updateHUD();
 }
 
 function update(time = 0) {
