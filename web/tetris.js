@@ -11,20 +11,26 @@ let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
 function resizeCanvas() {
   // Keep 10:20 (1:2) aspect ratio and fit screen
+  const controls = document.getElementById('controls');
+  const controlsHeight = controls ? controls.offsetHeight : 0;
   const maxW = window.innerWidth;
-  const maxH = window.innerHeight;
+  const maxH = window.innerHeight - controlsHeight;
 
-  let width = Math.min(maxW, Math.floor(maxH / 2));
-  let height = width * 2;
-
-  // Set canvas resolution
-  canvas.width = width;
-  canvas.height = height;
-
-  // Recompute block size from new canvas size
-  BLOCK_SIZE = Math.floor(canvas.width / COLS);
+  // determine block size that fits within viewport
+  const maxPlayableWidth = Math.min(maxW, Math.floor(maxH / 2));
+  BLOCK_SIZE = Math.floor(maxPlayableWidth / COLS);
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+
+  // match canvas display size
+  canvas.style.width = PLAY_WIDTH + 'px';
+  canvas.style.height = PLAY_HEIGHT + 'px';
+
+  // set actual canvas resolution based on device pixel ratio
+  const scale = window.devicePixelRatio || 1;
+  canvas.width = PLAY_WIDTH * scale;
+  canvas.height = PLAY_HEIGHT * scale;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas, { passive: true });
 window.addEventListener('orientationchange', resizeCanvas, { passive: true });
