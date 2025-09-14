@@ -8,10 +8,11 @@ const ctx = canvas.getContext('2d');
 // fraction of viewport used for block sizing
 const BLOCK_SCALE = 0.5;
 
-// default block size before first resize
-let BLOCK_SIZE = 15; // will be updated on resize
-let PLAY_WIDTH = COLS * BLOCK_SIZE;
-let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+// default sizes before first resize
+let CELL_SIZE = 15; // logical cell size, will be updated on resize
+let BLOCK_SIZE = CELL_SIZE * BLOCK_SCALE; // visual block size
+let PLAY_WIDTH = COLS * CELL_SIZE;
+let PLAY_HEIGHT = ROWS * CELL_SIZE;
 
 function resizeCanvas() {
   // Keep 10:20 (1:2) aspect ratio and fit screen
@@ -20,10 +21,11 @@ function resizeCanvas() {
   const maxW = window.innerWidth;
   const maxH = window.innerHeight - controlsHeight;
 
-  // determine logical block size with configurable scale
-  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS) * BLOCK_SCALE);
-  PLAY_WIDTH = COLS * BLOCK_SIZE;
-  PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+  // determine logical cell size then scale block size
+  CELL_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
+  BLOCK_SIZE = CELL_SIZE * BLOCK_SCALE;
+  PLAY_WIDTH = COLS * CELL_SIZE;
+  PLAY_HEIGHT = ROWS * CELL_SIZE;
 
   // keep canvas display size filling the viewport
   canvas.style.width = maxW + 'px';
@@ -134,8 +136,9 @@ function clearRows(grid) {
 
 // ----- Rendering -----
 function drawBlock(color, x, y) {
-  const px = x * BLOCK_SIZE;
-  const py = y * BLOCK_SIZE;
+  const offset = (CELL_SIZE - BLOCK_SIZE) / 2;
+  const px = x * CELL_SIZE + offset;
+  const py = y * CELL_SIZE + offset;
   ctx.fillStyle = color;
   ctx.shadowColor = 'rgba(0,0,0,0.4)';
   ctx.shadowBlur = 4;
@@ -147,15 +150,13 @@ function drawBlock(color, x, y) {
 }
 
 function drawGrid(grid) {
+  ctx.strokeStyle = '#222';
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
+      ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
       const cell = grid[y][x];
       if (cell !== 0) {
         drawBlock(cell, x, y);
-      } else {
-        // grid lines
-        ctx.strokeStyle = '#222';
-        ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
       }
     }
   }
