@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 from typing import List, Tuple
 
 # Initialize pygame's font module
@@ -119,23 +120,66 @@ T = [['.....',
       '.....']]
 
 SHAPES = [S, Z, I, O, J, L, T]
-SHAPE_COLORS = [(0, 255, 0), (255, 0, 0), (0, 255, 255),
-                (255, 255, 0), (255, 165, 0), (0, 0, 255),
-                (128, 0, 128)]
+
+# Base colors for the original theme
+SHAPE_COLORS = [
+    (0, 255, 0),
+    (255, 0, 0),
+    (0, 255, 255),
+    (255, 255, 0),
+    (255, 165, 0),
+    (0, 0, 255),
+    (128, 0, 128),
+]
+
+# Additional color themes mapped by name
+THEME_COLORS = {
+    'classic': SHAPE_COLORS,
+    'neon': [
+        (57, 255, 20),
+        (255, 20, 147),
+        (0, 255, 255),
+        (255, 255, 0),
+        (255, 127, 80),
+        (0, 191, 255),
+        (186, 85, 211),
+    ],
+    'pastel': [
+        (119, 221, 119),
+        (255, 179, 186),
+        (186, 225, 255),
+        (255, 255, 204),
+        (253, 253, 150),
+        (202, 231, 255),
+        (221, 160, 221),
+    ],
+}
+
+theme_names = list(THEME_COLORS.keys())
+current_theme_index = 0
+current_theme = theme_names[current_theme_index]
+
+
+def get_color(index: int) -> Tuple[int, int, int]:
+    return THEME_COLORS[current_theme][index]
 
 class Piece:
     def __init__(self, x: int, y: int, shape: List[List[str]]):
         self.x = x
         self.y = y
         self.shape = shape
-        self.color = SHAPE_COLORS[SHAPES.index(shape)]
+        self.color_index = SHAPES.index(shape)
         self.rotation = 0
+
+    @property
+    def color(self) -> Tuple[int, int, int]:
+        return get_color(self.color_index)
 
 
 def create_grid(locked_positions: dict) -> List[List[Tuple[int, int, int]]]:
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
-    for (j, i), color in locked_positions.items():
-        grid[i][j] = color
+    for (j, i), color_idx in locked_positions.items():
+        grid[i][j] = get_color(color_idx)
     return grid
 
 
@@ -209,8 +253,20 @@ def draw_next_shape(shape, surface):
     surface.blit(label, (sx + 10, sy - 30))
 
 
+def draw_background(surface, tick):
+    for y in range(S_HEIGHT):
+        offset = (y + tick * 0.02)
+        color = (
+            20 + int(20 * math.sin(offset)),
+            20 + int(20 * math.sin(offset + 2)),
+            20 + int(20 * math.sin(offset + 4)),
+        )
+        pygame.draw.line(surface, color, (0, y), (S_WIDTH, y))
+
+
 def draw_window(surface, grid, score=0):
-    surface.fill((0, 0, 0))
+    tick = pygame.time.get_ticks()
+    draw_background(surface, tick)
     font = pygame.font.SysFont('comicsans', 60)
     label = font.render('Tetris', True, (255, 255, 255))
     surface.blit(label, (TOP_LEFT_X + PLAY_WIDTH / 2 - label.get_width() / 2, 30))
@@ -229,6 +285,7 @@ def draw_window(surface, grid, score=0):
 
 
 def main():
+    global current_theme_index, current_theme
     locked_positions = {}
     grid = create_grid(locked_positions)
     change_piece = False
@@ -279,6 +336,9 @@ def main():
                     current_piece.rotation += 1
                     if not valid_space(current_piece, grid):
                         current_piece.rotation -= 1
+                elif event.key == pygame.K_t:
+                    current_theme_index = (current_theme_index + 1) % len(theme_names)
+                    current_theme = theme_names[current_theme_index]
         shape_pos = convert_shape_format(current_piece)
         for j, i in shape_pos:
             if i > -1:
@@ -286,7 +346,7 @@ def main():
         if change_piece:
             for pos in shape_pos:
                 p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.color
+                locked_positions[p] = current_piece.color_index
             current_piece = next_piece
             next_piece = get_shape()
             change_piece = False
