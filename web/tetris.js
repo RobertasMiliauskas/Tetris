@@ -5,7 +5,8 @@ const ROWS = 20;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-let BLOCK_SIZE = 30;                 // will be updated on resize
+// default block size before first resize
+let BLOCK_SIZE = 15;                 // will be updated on resize
 let PLAY_WIDTH = COLS * BLOCK_SIZE;
 let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
@@ -18,7 +19,7 @@ function resizeCanvas() {
 
   // determine block size that fits within viewport
   const maxPlayableWidth = Math.min(maxW, Math.floor(maxH / 2));
-  BLOCK_SIZE = Math.floor(maxPlayableWidth / COLS);
+  BLOCK_SIZE = Math.floor(maxPlayableWidth / COLS / 2);
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
