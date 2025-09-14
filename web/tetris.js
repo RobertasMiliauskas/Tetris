@@ -1,12 +1,36 @@
+// ----- Board & Canvas -----
 const COLS = 10;
 const ROWS = 20;
-const BLOCK_SIZE = 30;
-const PLAY_WIDTH = COLS * BLOCK_SIZE;
-const PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+let BLOCK_SIZE = 30;                 // will be updated on resize
+let PLAY_WIDTH = COLS * BLOCK_SIZE;
+let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+
+function resizeCanvas() {
+  // Keep 10:20 (1:2) aspect ratio and fit screen
+  const maxW = window.innerWidth;
+  const maxH = window.innerHeight;
+
+  let width = Math.min(maxW, Math.floor(maxH / 2));
+  let height = width * 2;
+
+  // Set canvas resolution
+  canvas.width = width;
+  canvas.height = height;
+
+  // Recompute block size from new canvas size
+  BLOCK_SIZE = Math.floor(canvas.width / COLS);
+  PLAY_WIDTH = COLS * BLOCK_SIZE;
+  PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+}
+window.addEventListener('resize', resizeCanvas, { passive: true });
+window.addEventListener('orientationchange', resizeCanvas, { passive: true });
+resizeCanvas();
+
+// ----- Shapes -----
 const S = [
   ['.....','.....','..00.','.00..','.....'],
   ['.....','..0..','..00.','...0.','.....']
@@ -19,9 +43,7 @@ const I = [
   ['..0..','..0..','..0..','..0..','.....'],
   ['.....','0000.','.....','.....','.....']
 ];
-const O = [
-  ['.....','.....','.00..','.00..','.....']
-];
+const O = [['.....','.....','.00..','.00..','.....']];
 const J = [
   ['.....','.0...','.000.','.....','.....'],
   ['.....','..00.','..0..','..0..','.....'],
@@ -44,6 +66,7 @@ const T = [
 const SHAPES = [S, Z, I, O, J, L, T];
 const SHAPE_COLORS = ['#00ff00', '#ff0000', '#00ffff', '#ffff00', '#ffa500', '#0000ff', '#800080'];
 
+// ----- Piece -----
 class Piece {
   constructor(x, y, shape) {
     this.x = x;
@@ -90,12 +113,13 @@ function clearRows(grid) {
       grid.splice(y, 1);
       grid.unshift(Array(COLS).fill(0));
       rowsCleared++;
-      y++; // recheck same row
+      y++; // re-check this index after unshift
     }
   }
   return rowsCleared;
 }
 
+// ----- Rendering -----
 function drawGrid(grid) {
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
@@ -104,19 +128,12 @@ function drawGrid(grid) {
         ctx.fillStyle = cell;
         ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
       }
+      // grid lines
       ctx.strokeStyle = '#222';
       ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     }
   }
 }
-
-let grid = createGrid();
-let currentPiece = getShape();
-let nextPiece = getShape();
-let dropCounter = 0;
-let dropInterval = 500;
-let lastTime = 0;
-let score = 0;
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -131,16 +148,23 @@ function draw() {
     }
   });
   ctx.fillStyle = '#fff';
-  ctx.font = '20px monospace';
-  ctx.fillText('Score: ' + score, 10, 20);
+  ctx.font = `${Math.floor(BLOCK_SIZE * 0.7)}px monospace`;
+  ctx.fillText('Score: ' + score, 10, Math.floor(BLOCK_SIZE * 0.9));
 }
+
+// ----- Game state -----
+let grid = createGrid();
+let currentPiece = getShape();
+let nextPiece = getShape();
+let dropCounter = 0;
+let dropInterval = 500;
+let lastTime = 0;
+let score = 0;
 
 function lockPiece() {
   const positions = convertShapeFormat(currentPiece);
   positions.forEach(pos => {
-    if (pos.y >= 0) {
-      grid[pos.y][pos.x] = currentPiece.color;
-    }
+    if (pos.y >= 0) grid[pos.y][pos.x] = currentPiece.color;
   });
   score += clearRows(grid) * 10;
   currentPiece = nextPiece;
@@ -167,20 +191,69 @@ function update(time = 0) {
   requestAnimationFrame(update);
 }
 
+// ----- Controls (keyboard, buttons, touch) -----
+function moveLeft() {
+  currentPiece.x -= 1;
+  if (!validSpace(currentPiece, grid)) currentPiece.x += 1;
+}
+function moveRight() {
+  currentPiece.x += 1;
+  if (!validSpace(currentPiece, grid)) currentPiece.x -= 1;
+}
+function softDrop() {
+  currentPiece.y += 1;
+  if (!validSpace(currentPiece, grid)) currentPiece.y -= 1;
+}
+function rotate() {
+  currentPiece.rotation += 1;
+  if (!validSpace(currentPiece, grid)) currentPiece.rotation -= 1;
+}
+function hardDrop() {
+  do { currentPiece.y += 1; }
+  while (validSpace(currentPiece, grid));
+  currentPiece.y -= 1;
+  lockPiece();
+}
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') {
-    currentPiece.x -= 1;
-    if (!validSpace(currentPiece, grid)) currentPiece.x += 1;
-  } else if (e.key === 'ArrowRight') {
-    currentPiece.x += 1;
-    if (!validSpace(currentPiece, grid)) currentPiece.x -= 1;
-  } else if (e.key === 'ArrowDown') {
-    currentPiece.y += 1;
-    if (!validSpace(currentPiece, grid)) currentPiece.y -= 1;
-  } else if (e.key === 'ArrowUp') {
-    currentPiece.rotation += 1;
-    if (!validSpace(currentPiece, grid)) currentPiece.rotation -= 1;
-  }
+  if (e.key === 'ArrowLeft') moveLeft();
+  else if (e.key === 'ArrowRight') moveRight();
+  else if (e.key === 'ArrowDown') softDrop();
+  else if (e.key === 'ArrowUp') rotate();
+  else if (e.key === ' ') hardDrop();
 });
 
+// Hook up on-screen buttons if present
+const btnLeft = document.getElementById('left');
+const btnRight = document.getElementById('right');
+const btnRotate = document.getElementById('rotate');
+const btnDrop = document.getElementById('drop');
+
+btnLeft?.addEventListener('click', moveLeft);
+btnRight?.addEventListener('click', moveRight);
+btnRotate?.addEventListener('click', rotate);
+btnDrop?.addEventListener('click', hardDrop);
+
+// Touch gestures on canvas
+let startX = 0, startY = 0;
+canvas.addEventListener('touchstart', (e) => {
+  const t = e.touches[0];
+  startX = t.clientX;
+  startY = t.clientY;
+}, { passive: true });
+
+canvas.addEventListener('touchend', (e) => {
+  const t = e.changedTouches[0];
+  const dx = t.clientX - startX;
+  const dy = t.clientY - startY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 30) moveRight();
+    else if (dx < -30) moveLeft();
+  } else {
+    if (dy > 30) hardDrop();
+    else if (dy < -30) rotate();
+  }
+}, { passive: true });
+
+// ----- Start -----
 update();

@@ -2,14 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tetris</title>
   <style>
-    body { background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    canvas { border: 2px solid #fff; }
+    body {
+      background: #000;
+      color: #fff;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas { background: #000; border: 2px solid #fff; }
+    #controls { margin-top: 1em; }
+    #controls button { font-size: 1.2em; margin: 0 0.25em; }
   </style>
 </head>
 <body>
   <canvas id="game" width="300" height="600"></canvas>
+  <div id="controls">
+    <button id="left">◀️</button>
+    <button id="rotate">🔄</button>
+    <button id="right">▶️</button>
+    <button id="drop">⏬</button>
+  </div>
   <script src="tetris.js"></script>
 </body>
 </html>
