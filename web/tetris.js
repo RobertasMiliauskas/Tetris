@@ -9,6 +9,9 @@ const ctx = canvas.getContext('2d');
 let BLOCK_SIZE = 15;                 // will be updated on resize
 let PLAY_WIDTH = COLS * BLOCK_SIZE;
 let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
+let offsetX = 0;
+let offsetY = 0;
+let dpr = window.devicePixelRatio || 1;
 
 function resizeCanvas() {
   // Keep 10:20 (1:2) aspect ratio and fit screen
@@ -17,20 +20,22 @@ function resizeCanvas() {
   const maxW = window.innerWidth;
   const maxH = window.innerHeight - controlsHeight;
 
-  // determine logical block size at half scale
-  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS) / 2);
+  const BLOCK_SCALE = 0.5;
+  const cellSize = Math.min(maxW / COLS, maxH / ROWS);
+  BLOCK_SIZE = Math.floor(cellSize * BLOCK_SCALE);
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
-  // match canvas display size at double logical size
-  canvas.style.width = (PLAY_WIDTH * 2) + 'px';
-  canvas.style.height = (PLAY_HEIGHT * 2) + 'px';
+  canvas.style.width = maxW + 'px';
+  canvas.style.height = maxH + 'px';
 
-  // set actual canvas resolution accounting for device pixel ratio
-  const scale = (window.devicePixelRatio || 1) * 2;
-  canvas.width = PLAY_WIDTH * scale;
-  canvas.height = PLAY_HEIGHT * scale;
-  ctx.setTransform((window.devicePixelRatio || 1) * 2, 0, 0, (window.devicePixelRatio || 1) * 2, 0, 0);
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = maxW * dpr;
+  canvas.height = maxH * dpr;
+
+  offsetX = (maxW - PLAY_WIDTH) / 2;
+  offsetY = (maxH - PLAY_HEIGHT) / 2;
+  ctx.setTransform(dpr, 0, 0, dpr, offsetX * dpr, offsetY * dpr);
 }
 window.addEventListener('resize', resizeCanvas, { passive: true });
 window.addEventListener('orientationchange', resizeCanvas, { passive: true });
@@ -155,7 +160,11 @@ function drawGrid(grid) {
 }
 
 function draw() {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
   drawGrid(grid);
   const positions = convertShapeFormat(currentPiece);
   positions.forEach(pos => {
