@@ -28,24 +28,11 @@
       justify-content: center;
       align-items: center;
     }
-    #hud {
-      font-family: 'Press Start 2P', monospace;
-      border: 2px solid #fff;
-      padding: 0.5em 1em;
-      margin-bottom: 1em;
-      display: flex;
-      gap: 1em;
-      background: #111;
-    }
     canvas { background: #000; border: 2px solid #fff; }
     #install { display: none; font-size: 0.8em; margin-top: 1em; }
   </style>
 </head>
 <body class="safe">
-  <div id="hud">
-    <div id="score">Score: 0</div>
-    <div id="level">Level: 1</div>
-  </div>
   <canvas id="game" width="300" height="600"></canvas>
   <button id="install">Install</button>
   <script src="tetris.js"></script>
