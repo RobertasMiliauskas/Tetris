@@ -128,17 +128,30 @@ function clearRows(grid) {
 }
 
 // ----- Rendering -----
+function drawBlock(color, x, y) {
+  const px = x * BLOCK_SIZE;
+  const py = y * BLOCK_SIZE;
+  ctx.fillStyle = color;
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 4;
+  ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#222';
+  ctx.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+}
+
 function drawGrid(grid) {
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
       const cell = grid[y][x];
       if (cell !== 0) {
-        ctx.fillStyle = cell;
-        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        drawBlock(cell, x, y);
+      } else {
+        // grid lines
+        ctx.strokeStyle = '#222';
+        ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
       }
-      // grid lines
-      ctx.strokeStyle = '#222';
-      ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     }
   }
 }
@@ -149,10 +162,7 @@ function draw() {
   const positions = convertShapeFormat(currentPiece);
   positions.forEach(pos => {
     if (pos.y >= 0) {
-      ctx.fillStyle = currentPiece.color;
-      ctx.fillRect(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-      ctx.strokeStyle = '#222';
-      ctx.strokeRect(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+      drawBlock(currentPiece.color, pos.x, pos.y);
     }
   });
 }
