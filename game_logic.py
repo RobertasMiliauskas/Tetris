@@ -143,7 +143,10 @@ def convert_shape_format(piece: Piece) -> List[Tuple[int, int]]:
 def valid_space(piece: Piece, grid: List[List[Tuple[int, int, int]]]) -> bool:
     accepted_positions = [(j, i) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == (0, 0, 0)]
     formatted = convert_shape_format(piece)
-    return all(pos in accepted_positions and pos[1] > -1 for pos in formatted)
+    for x, y in formatted:
+        if (x, y) not in accepted_positions and y > -1:
+            return False
+    return True
 
 
 def move_piece(piece: Piece, dx: int, dy: int, grid: List[List[Tuple[int, int, int]]]) -> bool:
