@@ -115,32 +115,16 @@ function getShape() {
 }
 
 function clearRows(grid) {
-  const rows = [];
+  let rowsCleared = 0;
   for (let y = ROWS - 1; y >= 0; y--) {
     if (grid[y].every(cell => cell !== 0)) {
-      rows.push(y);
+      grid.splice(y, 1);
+      grid.unshift(Array(COLS).fill(0));
+      rowsCleared++;
+      y++; // re-check this index after unshift
     }
   }
-  if (rows.length > 0) {
-    flashRows = rows.slice();
-    flashStart = performance.now();
-    setTimeout(() => {
-      rows.sort((a, b) => a - b);
-      for (let i = rows.length - 1; i >= 0; i--) {
-        grid.splice(rows[i], 1);
-        grid.unshift(Array(COLS).fill(0));
-      }
-      score += rows.length * 10;
-      linesCleared += rows.length;
-      if (linesCleared >= level * 10) {
-        level++;
-        dropInterval = Math.max(100, 500 - (level - 1) * 50);
-      }
-      flashRows = [];
-      updateHUD();
-    }, FLASH_DURATION);
-  }
-  return rows.length;
+  return rowsCleared;
 }
 
 // ----- Rendering -----
@@ -162,8 +146,7 @@ function drawGrid(grid) {
     for (let x = 0; x < grid[y].length; x++) {
       const cell = grid[y][x];
       if (cell !== 0) {
-        const color = flashRows.includes(y) ? '#ffffff' : cell;
-        drawBlock(color, x, y);
+        drawBlock(cell, x, y);
       } else {
         // grid lines
         ctx.strokeStyle = '#222';
@@ -194,9 +177,6 @@ let lastTime = 0;
 let score = 0;
 let level = 1;
 let linesCleared = 0;
-let flashRows = [];
-const FLASH_DURATION = 150;
-let flashStart = 0;
 
 function updateHUD() {
   scoreEl.textContent = 'Score: ' + score;
@@ -210,7 +190,15 @@ function lockPiece() {
   positions.forEach(pos => {
     if (pos.y >= 0) grid[pos.y][pos.x] = currentPiece.color;
   });
-  clearRows(grid);
+  const cleared = clearRows(grid);
+  if (cleared > 0) {
+    score += cleared * 10;
+    linesCleared += cleared;
+    if (linesCleared >= level * 10) {
+      level++;
+      dropInterval = Math.max(100, 500 - (level - 1) * 50);
+    }
+  }
   currentPiece = nextPiece;
   nextPiece = getShape();
   if (!validSpace(currentPiece, grid)) {
