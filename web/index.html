@@ -1,18 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Tetris</title>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tetris</title>
   <style>
-    body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-    canvas { background: #000; }
+    body {
+      background: #000;
+      color: #fff;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas { background: #000; border: 2px solid #fff; }
     #controls { margin-top: 1em; }
     #controls button { font-size: 1.2em; margin: 0 0.25em; }
   </style>
 </head>
 <body>
-  <canvas id="tetris"></canvas>
+  <canvas id="game" width="300" height="600"></canvas>
   <div id="controls">
     <button id="left">◀️</button>
     <button id="rotate">🔄</button>
