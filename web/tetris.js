@@ -105,7 +105,7 @@ function convertShapeFormat(piece) {
 function validSpace(piece, grid) {
   const formatted = convertShapeFormat(piece);
   return formatted.every(p =>
-    p.x >= 0 && p.x < COLS && p.y < ROWS && (p.y < 0 || grid[p.y][p.x] === 0)
+    p.y < 0 || (p.x >= 0 && p.x < COLS && p.y < ROWS && grid[p.y][p.x] === 0)
   );
 }
 
