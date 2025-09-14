@@ -27,6 +27,14 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      position: relative;
+    }
+    #starfield {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      border: none;
     }
     #hud {
       font-family: 'Press Start 2P', monospace;
@@ -46,8 +54,10 @@
     <div id="score">Score: 0</div>
     <div id="level">Level: 1</div>
   </div>
+  <canvas id="starfield"></canvas>
   <canvas id="game" width="300" height="600"></canvas>
   <button id="install">Install</button>
+  <script src="starfield.js"></script>
   <script src="tetris.js"></script>
 <script>
 if ("serviceWorker" in navigator) {
