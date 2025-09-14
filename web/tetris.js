@@ -5,8 +5,11 @@ const ROWS = 20;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+// fraction of viewport used for block sizing
+const BLOCK_SCALE = 0.5;
+
 // default block size before first resize
-let BLOCK_SIZE = 15;                 // will be updated on resize
+let BLOCK_SIZE = 15; // will be updated on resize
 let PLAY_WIDTH = COLS * BLOCK_SIZE;
 let PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
@@ -17,20 +20,24 @@ function resizeCanvas() {
   const maxW = window.innerWidth;
   const maxH = window.innerHeight - controlsHeight;
 
-  // determine logical block size at half scale
-  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS) / 2);
+  // determine logical block size with configurable scale
+  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS) * BLOCK_SCALE);
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
-  // match canvas display size at double logical size
-  canvas.style.width = (PLAY_WIDTH * 2) + 'px';
-  canvas.style.height = (PLAY_HEIGHT * 2) + 'px';
+  // keep canvas display size filling the viewport
+  canvas.style.width = maxW + 'px';
+  canvas.style.height = maxH + 'px';
 
   // set actual canvas resolution accounting for device pixel ratio
-  const scale = (window.devicePixelRatio || 1) * 2;
-  canvas.width = PLAY_WIDTH * scale;
-  canvas.height = PLAY_HEIGHT * scale;
-  ctx.setTransform((window.devicePixelRatio || 1) * 2, 0, 0, (window.devicePixelRatio || 1) * 2, 0, 0);
+  const scale = window.devicePixelRatio || 1;
+  canvas.width = maxW * scale;
+  canvas.height = maxH * scale;
+
+  // center playfield within the canvas
+  const offsetX = (maxW - PLAY_WIDTH) / 2;
+  const offsetY = (maxH - PLAY_HEIGHT) / 2;
+  ctx.setTransform(scale, 0, 0, scale, offsetX * scale, offsetY * scale);
 }
 window.addEventListener('resize', resizeCanvas, { passive: true });
 window.addEventListener('orientationchange', resizeCanvas, { passive: true });
