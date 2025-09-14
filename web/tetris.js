@@ -260,17 +260,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === ' ') hardDrop();
 });
 
-// Hook up on-screen buttons if present
-const btnLeft = document.getElementById('left');
-const btnRight = document.getElementById('right');
-const btnRotate = document.getElementById('rotate');
-const btnDrop = document.getElementById('drop');
 const btnInstall = document.getElementById('install');
-
-btnLeft?.addEventListener('click', moveLeft);
-btnRight?.addEventListener('click', moveRight);
-btnRotate?.addEventListener('click', rotate);
-btnDrop?.addEventListener('click', hardDrop);
 
 // Handle PWA installation
 let deferredPrompt;
