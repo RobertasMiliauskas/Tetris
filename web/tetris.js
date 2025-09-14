@@ -216,6 +216,7 @@ function hardDrop() {
 }
 
 document.addEventListener('keydown', e => {
+  e.preventDefault();
   if (e.key === 'ArrowLeft') moveLeft();
   else if (e.key === 'ArrowRight') moveRight();
   else if (e.key === 'ArrowDown') softDrop();
