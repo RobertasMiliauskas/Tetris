@@ -18,8 +18,7 @@ function resizeCanvas() {
   const maxH = window.innerHeight - controlsHeight;
 
   // determine block size that fits within viewport
-  const maxPlayableWidth = Math.min(maxW, Math.floor(maxH / 2));
-  BLOCK_SIZE = Math.floor(maxPlayableWidth / COLS / 2);
+  BLOCK_SIZE = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
   PLAY_WIDTH = COLS * BLOCK_SIZE;
   PLAY_HEIGHT = ROWS * BLOCK_SIZE;
 
