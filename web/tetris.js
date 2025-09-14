@@ -4,6 +4,8 @@ const ROWS = 20;
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
 
 let BLOCK_SIZE = 30;                 // will be updated on resize
 let PLAY_WIDTH = COLS * BLOCK_SIZE;
@@ -153,9 +155,6 @@ function draw() {
       ctx.strokeRect(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     }
   });
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.floor(BLOCK_SIZE * 0.7)}px monospace`;
-  ctx.fillText('Score: ' + score, 10, Math.floor(BLOCK_SIZE * 0.9));
 }
 
 // ----- Game state -----
@@ -166,19 +165,40 @@ let dropCounter = 0;
 let dropInterval = 500;
 let lastTime = 0;
 let score = 0;
+let level = 1;
+let linesCleared = 0;
+
+function updateHUD() {
+  scoreEl.textContent = 'Score: ' + score;
+  levelEl.textContent = 'Level: ' + level;
+}
+
+updateHUD();
 
 function lockPiece() {
   const positions = convertShapeFormat(currentPiece);
   positions.forEach(pos => {
     if (pos.y >= 0) grid[pos.y][pos.x] = currentPiece.color;
   });
-  score += clearRows(grid) * 10;
+  const cleared = clearRows(grid);
+  if (cleared > 0) {
+    score += cleared * 10;
+    linesCleared += cleared;
+    if (linesCleared >= level * 10) {
+      level++;
+      dropInterval = Math.max(100, 500 - (level - 1) * 50);
+    }
+  }
   currentPiece = nextPiece;
   nextPiece = getShape();
   if (!validSpace(currentPiece, grid)) {
     grid = createGrid();
     score = 0;
+    level = 1;
+    linesCleared = 0;
+    dropInterval = 500;
   }
+  updateHUD();
 }
 
 function update(time = 0) {
