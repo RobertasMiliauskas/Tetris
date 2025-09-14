@@ -9,9 +9,9 @@ pygame.font.init()
 # Game dimensions
 S_WIDTH = 800
 S_HEIGHT = 750
-PLAY_WIDTH = 300  # 10 blocks wide
-PLAY_HEIGHT = 600  # 20 blocks high
-BLOCK_SIZE = 30
+PLAY_WIDTH = 150  # 10 blocks wide
+PLAY_HEIGHT = 300  # 20 blocks high
+BLOCK_SIZE = 15
 
 TOP_LEFT_X = (S_WIDTH - PLAY_WIDTH) // 2
 TOP_LEFT_Y = S_HEIGHT - PLAY_HEIGHT - 50
