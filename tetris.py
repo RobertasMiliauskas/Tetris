@@ -11,7 +11,17 @@ S_WIDTH = 800
 S_HEIGHT = 750
 PLAY_WIDTH = 150  # 10 blocks wide
 PLAY_HEIGHT = 300  # 20 blocks high
-BLOCK_SIZE = 15
+
+# logical grid dimensions
+COLS = 10
+ROWS = 20
+
+# derive cell spacing from the fixed board size
+CELL_STEP = min(PLAY_WIDTH // COLS, PLAY_HEIGHT // ROWS)
+# visual cell is half the logical step
+CELL_SIZE = CELL_STEP // 2
+# center smaller cells within each logical step
+CELL_OFFSET = (CELL_STEP - CELL_SIZE) // 2
 
 TOP_LEFT_X = (S_WIDTH - PLAY_WIDTH) // 2
 TOP_LEFT_Y = S_HEIGHT - PLAY_HEIGHT - 50
@@ -178,9 +188,9 @@ class Piece:
 
 
 def create_grid(locked_positions: dict) -> List[List[Tuple[int, int, int]]]:
-    grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
+    grid = [[(0, 0, 0) for _ in range(COLS)] for _ in range(ROWS)]
     for (j, i), color_idx in locked_positions.items():
-        if 0 <= i < 20 and 0 <= j < 10:
+        if 0 <= i < ROWS and 0 <= j < COLS:
             grid[i][j] = get_color(color_idx)
     return grid
 
@@ -196,7 +206,7 @@ def convert_shape_format(piece: Piece) -> List[Tuple[int, int]]:
 
 
 def valid_space(piece: Piece, grid: List[List[Tuple[int, int, int]]]) -> bool:
-    accepted_positions = [(j, i) for i in range(20) for j in range(10) if grid[i][j] == (0, 0, 0)]
+    accepted_positions = [(j, i) for i in range(ROWS) for j in range(COLS) if grid[i][j] == (0, 0, 0)]
     formatted = convert_shape_format(piece)
     for x, y in formatted:
         if (x, y) not in accepted_positions and y > -1:
@@ -209,7 +219,7 @@ def check_lost(positions: dict) -> bool:
 
 
 def get_shape() -> Piece:
-    return Piece(5, 0, random.choice(SHAPES))
+    return Piece(COLS // 2, 0, random.choice(SHAPES))
 
 
 # ---- Minimal inline game logic to replace missing imports ----
@@ -234,15 +244,15 @@ def rotate_piece(piece: Piece, grid) -> None:
 def clear_rows(locked: dict) -> int:
     """Remove full rows from locked positions; return number of cleared rows."""
     rows_to_clear = []
-    for i in range(20):
-        if all((j, i) in locked for j in range(10)):
+    for i in range(ROWS):
+        if all((j, i) in locked for j in range(COLS)):
             rows_to_clear.append(i)
     if not rows_to_clear:
         return 0
 
     # Remove cleared rows
     for i in rows_to_clear:
-        for j in range(10):
+        for j in range(COLS):
             locked.pop((j, i), None)
 
     # Shift everything above down
@@ -272,11 +282,13 @@ def draw_text_middle(surface, text, size, color):
 
 def draw_grid(surface, grid):
     for i in range(len(grid)):
-        pygame.draw.line(surface, (128, 128, 128), (TOP_LEFT_X, TOP_LEFT_Y + i * BLOCK_SIZE),
-                         (TOP_LEFT_X + PLAY_WIDTH, TOP_LEFT_Y + i * BLOCK_SIZE))
-        for j in range(len(grid[i])):
-            pygame.draw.line(surface, (128, 128, 128), (TOP_LEFT_X + j * BLOCK_SIZE, TOP_LEFT_Y),
-                             (TOP_LEFT_X + j * BLOCK_SIZE, TOP_LEFT_Y + PLAY_HEIGHT))
+        y = TOP_LEFT_Y + i * CELL_STEP
+        pygame.draw.line(surface, (128, 128, 128), (TOP_LEFT_X, y),
+                         (TOP_LEFT_X + PLAY_WIDTH, y))
+    for j in range(len(grid[0])):
+        x = TOP_LEFT_X + j * CELL_STEP
+        pygame.draw.line(surface, (128, 128, 128), (x, TOP_LEFT_Y),
+                         (x, TOP_LEFT_Y + PLAY_HEIGHT))
 
 
 def draw_next_shape(shape, surface):
@@ -289,7 +301,7 @@ def draw_next_shape(shape, surface):
         for j, char in enumerate(line):
             if char == '0':
                 pygame.draw.rect(surface, shape.color,
-                                 (sx + j * BLOCK_SIZE, sy + i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE), 0)
+                                 (sx + j * CELL_SIZE, sy + i * CELL_SIZE, CELL_SIZE, CELL_SIZE), 0)
     surface.blit(label, (sx + 10, sy - 30))
 
 
@@ -317,8 +329,10 @@ def draw_window(surface, grid, score=0):
     surface.blit(label, (sx + 20, sy + 160))
     for i in range(len(grid)):
         for j in range(len(grid[i])):
+            x = TOP_LEFT_X + j * CELL_STEP + CELL_OFFSET
+            y = TOP_LEFT_Y + i * CELL_STEP + CELL_OFFSET
             pygame.draw.rect(surface, grid[i][j],
-                             (TOP_LEFT_X + j * BLOCK_SIZE, TOP_LEFT_Y + i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE), 0)
+                             (x, y, CELL_SIZE, CELL_SIZE), 0)
     draw_grid(surface, grid)
     pygame.draw.rect(surface, (255, 0, 0),
                      (TOP_LEFT_X, TOP_LEFT_Y, PLAY_WIDTH, PLAY_HEIGHT), 5)
