@@ -229,11 +229,31 @@ const btnLeft = document.getElementById('left');
 const btnRight = document.getElementById('right');
 const btnRotate = document.getElementById('rotate');
 const btnDrop = document.getElementById('drop');
+const btnInstall = document.getElementById('install');
 
 btnLeft?.addEventListener('click', moveLeft);
 btnRight?.addEventListener('click', moveRight);
 btnRotate?.addEventListener('click', rotate);
 btnDrop?.addEventListener('click', hardDrop);
+
+// Handle PWA installation
+let deferredPrompt;
+const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+if (isIOS) {
+  btnInstall?.remove();
+} else if (btnInstall) {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    btnInstall.style.display = 'inline-block';
+  });
+
+  btnInstall.addEventListener('click', () => {
+    btnInstall.style.display = 'none';
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+  });
+}
 
 // Touch gestures on canvas
 let startX = 0, startY = 0;
